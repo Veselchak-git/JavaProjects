@@ -7,8 +7,10 @@ import javax.swing.*;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 
-public class MusicApp {
+
+public class MusicApp implements Serializable {
     JPanel mainPanel;
     ArrayList<JCheckBox> checkboxList;
     Sequencer sequencer;
@@ -45,6 +47,62 @@ public class MusicApp {
         public void actionPerformed(ActionEvent actionEvent) {
             float tempoFactor = sequencer.getTempoFactor();
             sequencer.setTempoFactor((float) (tempoFactor * 0.97));
+        }
+    }
+
+    public class SendListener implements ActionListener {
+        public void actionPerformed(ActionEvent actionEvent) {
+            boolean[] checkboxState = new boolean[256];
+            
+            for(int i = 0; i < 256; i++) {
+                JCheckBox checkbox = (JCheckBox) checkboxList.get(i);
+                if (checkbox.isSelected()) {
+                    checkboxState[i] = true;
+                }
+            }
+            JFileChooser fileSave = new JFileChooser();
+            fileSave.showSaveDialog(frame);
+
+            try {
+                FileOutputStream fileStream = new FileOutputStream(fileSave.getSelectedFile());
+                ObjectOutputStream os = new ObjectOutputStream(fileStream);
+                os.writeObject(checkboxState);
+                os.close();
+            }
+            catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    public class ReadInListener implements ActionListener {
+        public void actionPerformed(ActionEvent actionEvent) {
+            boolean[] checkboxState = null;
+
+            JFileChooser fileOpen = new JFileChooser();
+            fileOpen.showOpenDialog(frame);
+            
+            try {
+                FileInputStream fileIn = new FileInputStream(fileOpen.getSelectedFile());
+                ObjectInputStream is = new ObjectInputStream(fileIn);
+                checkboxState = (boolean[]) is.readObject();
+                is.close();
+            }
+            catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            for(int i = 0; i < 256; i++) {
+                JCheckBox checkbox = (JCheckBox) checkboxList.get(i);
+                if (checkboxState[i]) {
+                    checkbox.setSelected(true);
+                }
+                else {
+                    checkbox.setSelected(false);
+                }
+            }
+            sequencer.stop();
+            buildTrackAndStart();
         }
     }
 
@@ -96,8 +154,8 @@ public class MusicApp {
             int key = musicalTools[i];
 
             for (int j = 0; j < 16; j++) {
-                JCheckBox checkBox = (JCheckBox) checkboxList.get(j + (16*i));
-                if (checkBox.isSelected()) {
+                JCheckBox checkbox = (JCheckBox) checkboxList.get(j + (16*i));
+                if (checkbox.isSelected()) {
                     trackList[j] = key;
                 }
                 else {
@@ -145,6 +203,14 @@ public class MusicApp {
         JButton downTempo = new JButton("Tempo Down");
         upTempo.addActionListener(new DownTempoListener());
         buttonBox.add(downTempo); 
+
+        JButton sendIt = new JButton("Save");
+        sendIt.addActionListener(new SendListener());
+        buttonBox.add(sendIt);
+
+        JButton restore = new JButton("Open");
+        restore.addActionListener(new ReadInListener());
+        buttonBox.add(restore);
 
         Box nameBox = new Box(BoxLayout.Y_AXIS);
         for (int i = 0; i < 16; i++) {
