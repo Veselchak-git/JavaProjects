@@ -201,7 +201,7 @@ public class MusicApp implements Serializable {
         buttonBox.add(upTempo);
 
         JButton downTempo = new JButton("Tempo Down");
-        upTempo.addActionListener(new DownTempoListener());
+        downTempo.addActionListener(new DownTempoListener());
         buttonBox.add(downTempo); 
 
         JButton sendIt = new JButton("Save");
